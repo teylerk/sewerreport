@@ -18,7 +18,7 @@ export default function Home() {
   const handlePinSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const { data } = await supabase.from("clients").select("*").eq("pin", pin);
-    if (data.length > 0) {
+    if (data && data.length > 0) {
       router.push(`/client?pin=${pin}`);
     } else {
       alert("Incorrect PIN");
