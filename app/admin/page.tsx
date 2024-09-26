@@ -32,7 +32,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user && allowedEmails.includes(user.email)) {
+      if (user && user.email && allowedEmails.includes(user.email)) {
         setIsAuthorized(true);
         fetchClients();
       } else {
@@ -91,13 +91,8 @@ export default function AdminDashboard() {
     }
   };
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!isAuthorized) {
-    return null;
-  }
+  if (isLoading) return <div>Loading...</div>;
+  if (!isAuthorized) return null;
 
   return (
     <div className="p-8">
