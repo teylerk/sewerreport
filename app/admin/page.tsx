@@ -25,6 +25,7 @@ interface Client {
   pin: string;
   step: number;
   docusign_link: string;
+  notes: string; // Add the notes field to the Client interface
 }
 
 export default function AdminDashboard() {
@@ -40,6 +41,7 @@ export default function AdminDashboard() {
     scheduled_date: "",
     signed_bid: false,
     docusign_link: "",
+    notes: "", // Initialize the notes field
   });
   const [editClientId, setEditClientId] = useState<string | null>(null);
   const router = useRouter();
@@ -62,11 +64,13 @@ export default function AdminDashboard() {
   const fetchClients = async () => {
     const { data } = await supabase.from("clients").select("*");
     if (data) {
-      setClients(data);
+      // Sort clients by scheduled_date in ascending order
+      const sortedClients = data.sort((a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime());
+      setClients(sortedClients);
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type, checked } = e.target;
     setNewClient((prev) => ({
       ...prev,
@@ -104,34 +108,65 @@ export default function AdminDashboard() {
   };
 
   const handleNextStep = async (client: Client) => {
-    if (client.step < 10) { // Ensure the step does not exceed 10
-      const updatedStep = client.step + 1; // Increment the step
+    if (client.step < 10) {
+      const updatedStep = client.step + 1;
       const { error } = await supabase
         .from("clients")
         .update({ step: updatedStep })
-        .eq("id", client.id); // Update the client's step in the database
+        .eq("id", client.id);
 
       if (error) {
         alert("Error updating step");
       } else {
-        fetchClients(); // Refresh the client list to reflect the updated step
+        fetchClients();
       }
     }
   };
 
   const handlePreviousStep = async (client: Client) => {
-    if (client.step > 1) { // Ensure the step does not go below 1
-      const updatedStep = client.step - 1; // Decrement the step
+    if (client.step > 1) {
+      const updatedStep = client.step - 1;
       const { error } = await supabase
         .from("clients")
         .update({ step: updatedStep })
-        .eq("id", client.id); // Update the client's step in the database
+        .eq("id", client.id);
 
       if (error) {
         alert("Error updating step");
       } else {
-        fetchClients(); // Refresh the client list to reflect the updated step
+        fetchClients();
       }
+    }
+  };
+
+  const getClientStepText = (client: Client) => {
+    switch (client.step) {
+      case 1:
+        return (
+          <>
+            <p className="text-white">Please sign the document using the following link:</p>
+            <a
+              href={client.docusign_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white underline"
+            >
+              {client.docusign_link}
+            </a>
+            <p className="mt-2 text-white">Once signed, please wait for 24 hours for the next step to appear.</p>
+          </>
+        );
+      case 2:
+        return (
+          <>
+            <p className="text-white">Documents Signed, Thank you. Your repair/replacement is scheduled for:</p>
+            <p className="text-white font-bold">{client.scheduled_date}</p>
+            <p className="mt-2 text-white">We usually arrive around 7am - 8am in the morning. We will let you know if we are going to arrive later in the day.</p>
+            <p className="mt-2 text-white text-xs italic">This date may change, sometimes we have delays due to city permitting, unforeseen underground obstacles, and weather.</p>
+          </>
+        );
+      default:
+        return <p className="text-white">Step {client.step} of 10</p>;
     }
   };
 
@@ -159,6 +194,10 @@ export default function AdminDashboard() {
             <p className="text-white"><strong>PIN:</strong> {client.pin}</p>
             <p className="text-white"><strong>Step:</strong> {client.step}</p>
             <p className="text-white"><strong>DocuSign Link:</strong> {client.docusign_link}</p>
+            <p className="text-white"><strong>Notes:</strong> {client.notes}</p> {/* Display the notes field */}
+            <div className="mt-4 border border-white p-4 rounded-lg">
+              {getClientStepText(client)}
+            </div>
             <div className="flex gap-2 mt-4">
               <button
                 onClick={() => handleEditClient(client)}
@@ -167,14 +206,14 @@ export default function AdminDashboard() {
                 Edit
               </button>
               <button
-                onClick={() => handlePreviousStep(client)} // Call the new function here
+                onClick={() => handlePreviousStep(client)}
                 className="px-4 py-2 bg-gray-500 text-white rounded-lg"
                 disabled={client.step === 1}
               >
                 Previous Step
               </button>
               <button
-                onClick={() => handleNextStep(client)} // Call the new function here
+                onClick={() => handleNextStep(client)}
                 className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition duration-300"
                 disabled={client.step === 10}
               >
@@ -250,6 +289,13 @@ export default function AdminDashboard() {
                 value={newClient.docusign_link}
                 onChange={handleInputChange}
                 placeholder="DocuSign Link"
+                className="w-full px-4 py-3 border border-purple-300 bg-white bg-opacity-20 rounded-lg text-black placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-300"
+              />
+              <textarea
+                name="notes"
+                value={newClient.notes}
+                onChange={handleInputChange}
+                placeholder="Notes"
                 className="w-full px-4 py-3 border border-purple-300 bg-white bg-opacity-20 rounded-lg text-black placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-300"
               />
               <button

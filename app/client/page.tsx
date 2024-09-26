@@ -38,17 +38,26 @@ function ClientPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 p-8 animate-gradient">
       <h1 className="text-4xl font-bold text-white mb-8 text-center">Client Information</h1>
       <div className="p-4 bg-white bg-opacity-10 rounded-xl backdrop-blur-lg shadow-xl">
-        <p className="text-white"><strong>Name:</strong> {client.name}</p>
-        <p className="text-white"><strong>Address:</strong> {client.address}</p>
-        <p className="text-white"><strong>Phone:</strong> {client.phone}</p>
-        <p className="text-white"><strong>Email:</strong> {client.email}</p>
-        <p className="text-white"><strong>Scheduled Date:</strong> {client.scheduled_date}</p>
-        <p className="text-white"><strong>Signed Bid:</strong> {client.signed_bid ? "Yes" : "No"}</p>
+        <div className="border border-white p-4 rounded-lg mb-4">
+          <p className="text-white"><strong>Name:</strong> {client.name}</p>
+        </div>
+        <div className="border border-white p-4 rounded-lg mb-4">
+          <p className="text-white"><strong>Address:</strong> {client.address}</p>
+        </div>
+        <div className="border border-white p-4 rounded-lg mb-4">
+          <p className="text-white"><strong>Phone:</strong> {client.phone}</p>
+        </div>
+        <div className="border border-white p-4 rounded-lg mb-4">
+          <p className="text-white"><strong>Email:</strong> {client.email}</p>
+        </div>
+        <div className="border border-white p-4 rounded-lg mb-4">
+          <p className="text-white"><strong>Signed Bid:</strong> {client.signed_bid ? "Yes" : "No"}</p>
+        </div>
         {client.step === 1 && (
-          <div className="mt-4">
+          <div className="mt-4 border border-white p-4 rounded-lg">
             <p className="text-white">Please sign the document using the following link:</p>
             <a
               href={client.docusign_link}
@@ -59,6 +68,14 @@ function ClientPageContent() {
               {client.docusign_link}
             </a>
             <p className="mt-2 text-white">Once signed, please wait for 24 hours for the next step to appear.</p>
+          </div>
+        )}
+        {client.step === 2 && (
+          <div className="mt-4 border border-white p-4 rounded-lg">
+            <p className="text-white">Documents Signed, Thank you. Your repair/replacement is scheduled for:</p>
+            <p className="text-white font-bold">{client.scheduled_date}</p>
+            <p className="mt-2 text-white">We usually arrive around 7am - 8am in the morning. We will let you know if we are going to arrive later in the day.</p>
+            <p className="mt-2 text-white text-xs italic">This date may change, sometimes we have delays due to city permitting, unforeseen underground obstacles, and weather.</p>
           </div>
         )}
         <div className="mt-4">
