@@ -24,6 +24,7 @@ interface Client {
   signed_bid: boolean;
   pin: string;
   step: number;
+  docusign_link: string;
 }
 
 export default function AdminDashboard() {
@@ -38,7 +39,9 @@ export default function AdminDashboard() {
     email: "",
     scheduled_date: "",
     signed_bid: false,
+    docusign_link: "",
   });
+  const [editClientId, setEditClientId] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -83,25 +86,36 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleNextStep = async (client: Client) => {
-    const newStep = Math.min(client.step + 1, 10);
-    const { error } = await supabase
-      .from("clients")
-      .update({ step: newStep })
-      .eq("id", client.id);
-    if (!error) {
+  const handleEditClient = async (client: Client) => {
+    setNewClient(client);
+    setEditClientId(client.id);
+    setModalIsOpen(true);
+  };
+
+  const handleUpdateClient = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const { error } = await supabase.from("clients").update(newClient).eq("id", editClientId);
+    if (error) {
+      alert("Error updating client");
+    } else {
+      setModalIsOpen(false);
       fetchClients();
     }
   };
 
-  const handlePreviousStep = async (client: Client) => {
-    const newStep = Math.max(client.step - 1, 1);
-    const { error } = await supabase
-      .from("clients")
-      .update({ step: newStep })
-      .eq("id", client.id);
-    if (!error) {
-      fetchClients();
+  const handleNextStep = async (client: Client) => {
+    if (client.step < 10) { // Ensure the step does not exceed 10
+      const updatedStep = client.step + 1; // Increment the step
+      const { error } = await supabase
+        .from("clients")
+        .update({ step: updatedStep })
+        .eq("id", client.id); // Update the client's step in the database
+
+      if (error) {
+        alert("Error updating step");
+      } else {
+        fetchClients(); // Refresh the client list to reflect the updated step
+      }
     }
   };
 
@@ -109,36 +123,43 @@ export default function AdminDashboard() {
   if (!isAuthorized) return null;
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
+    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 p-8">
+      <h1 className="text-4xl font-bold text-white mb-8 text-center">Admin Dashboard</h1>
       <button
         onClick={() => setModalIsOpen(true)}
-        className="px-4 py-2 bg-blue-500 text-white rounded mb-4"
+        className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition duration-300 mb-8"
       >
         Add New Client
       </button>
-      <ul>
+      <ul className="space-y-4">
         {clients.map((client) => (
-          <li key={client.id} className="mb-2 p-2 border rounded">
-            <p>Name: {client.name}</p>
-            <p>Address: {client.address}</p>
-            <p>Phone: {client.phone}</p>
-            <p>Email: {client.email}</p>
-            <p>Scheduled Date: {client.scheduled_date}</p>
-            <p>Signed Bid: {client.signed_bid ? "Yes" : "No"}</p>
-            <p>PIN: {client.pin}</p>
-            <p>Step: {client.step}</p>
-            <div className="flex gap-2">
+          <li key={client.id} className="p-4 bg-white bg-opacity-10 rounded-xl backdrop-blur-lg shadow-xl">
+            <p className="text-white"><strong>Name:</strong> {client.name}</p>
+            <p className="text-white"><strong>Address:</strong> {client.address}</p>
+            <p className="text-white"><strong>Phone:</strong> {client.phone}</p>
+            <p className="text-white"><strong>Email:</strong> {client.email}</p>
+            <p className="text-white"><strong>Scheduled Date:</strong> {client.scheduled_date}</p>
+            <p className="text-white"><strong>Signed Bid:</strong> {client.signed_bid ? "Yes" : "No"}</p>
+            <p className="text-white"><strong>PIN:</strong> {client.pin}</p>
+            <p className="text-white"><strong>Step:</strong> {client.step}</p>
+            <p className="text-white"><strong>DocuSign Link:</strong> {client.docusign_link}</p>
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => handleEditClient(client)}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg"
+              >
+                Edit
+              </button>
               <button
                 onClick={() => handlePreviousStep(client)}
-                className="px-4 py-2 bg-gray-500 text-white rounded"
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg"
                 disabled={client.step === 1}
               >
                 Previous Step
               </button>
               <button
-                onClick={() => handleNextStep(client)}
-                className="px-4 py-2 bg-blue-500 text-white rounded"
+                onClick={() => handleNextStep(client)} // Call the new function here
+                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition duration-300"
                 disabled={client.step === 10}
               >
                 Next Step
@@ -150,16 +171,16 @@ export default function AdminDashboard() {
 
       {modalIsOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-8 rounded shadow-lg">
-            <h2 className="text-xl font-bold mb-4">Add New Client</h2>
-            <form onSubmit={handleAddClient} className="flex flex-col gap-4">
+          <div className="bg-white p-8 rounded-xl shadow-xl">
+            <h2 className="text-2xl font-bold mb-4 text-purple-600">{editClientId ? "Edit Client" : "Add New Client"}</h2>
+            <form onSubmit={editClientId ? handleUpdateClient : handleAddClient} className="space-y-4">
               <input
                 type="text"
                 name="name"
                 value={newClient.name}
                 onChange={handleInputChange}
                 placeholder="Client Name"
-                className="border p-2 rounded"
+                className="w-full px-4 py-3 border border-purple-300 bg-white bg-opacity-20 rounded-lg text-black placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-300"
                 required
               />
               <input
@@ -168,7 +189,7 @@ export default function AdminDashboard() {
                 value={newClient.address}
                 onChange={handleInputChange}
                 placeholder="Address"
-                className="border p-2 rounded"
+                className="w-full px-4 py-3 border border-purple-300 bg-white bg-opacity-20 rounded-lg text-black placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-300"
                 required
               />
               <input
@@ -177,7 +198,7 @@ export default function AdminDashboard() {
                 value={newClient.phone}
                 onChange={handleInputChange}
                 placeholder="Phone"
-                className="border p-2 rounded"
+                className="w-full px-4 py-3 border border-purple-300 bg-white bg-opacity-20 rounded-lg text-black placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-300"
                 required
               />
               <input
@@ -186,7 +207,7 @@ export default function AdminDashboard() {
                 value={newClient.email}
                 onChange={handleInputChange}
                 placeholder="Email"
-                className="border p-2 rounded"
+                className="w-full px-4 py-3 border border-purple-300 bg-white bg-opacity-20 rounded-lg text-black placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-300"
                 required
               />
               <input
@@ -194,10 +215,10 @@ export default function AdminDashboard() {
                 name="scheduled_date"
                 value={newClient.scheduled_date}
                 onChange={handleInputChange}
-                className="border p-2 rounded"
+                className="w-full px-4 py-3 border border-purple-300 bg-white bg-opacity-20 rounded-lg text-black placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-300"
                 required
               />
-              <label className="flex items-center">
+              <label className="flex items-center text-black">
                 <input
                   type="checkbox"
                   name="signed_bid"
@@ -207,16 +228,24 @@ export default function AdminDashboard() {
                 />
                 Signed Bid?
               </label>
+              <input
+                type="text"
+                name="docusign_link"
+                value={newClient.docusign_link}
+                onChange={handleInputChange}
+                placeholder="DocuSign Link"
+                className="w-full px-4 py-3 border border-purple-300 bg-white bg-opacity-20 rounded-lg text-black placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-300"
+              />
               <button
                 type="submit"
-                className="px-4 py-2 bg-green-500 text-white rounded"
+                className="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-lg transition duration-300"
               >
-                Add Client
+                {editClientId ? "Update Client" : "Add Client"}
               </button>
               <button
                 type="button"
                 onClick={() => setModalIsOpen(false)}
-                className="px-4 py-2 bg-red-500 text-white rounded mt-2"
+                className="w-full px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-lg transition duration-300 mt-2"
               >
                 Cancel
               </button>

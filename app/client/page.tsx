@@ -12,6 +12,7 @@ interface Client {
   scheduled_date: string;
   signed_bid: boolean;
   step: number;
+  docusign_link: string; // Include the DocuSign link in the Client interface
 }
 
 function ClientPageContent() {
@@ -43,6 +44,20 @@ function ClientPageContent() {
             <p><strong>Scheduled Date:</strong> {client.scheduled_date}</p>
             <p><strong>Signed Bid:</strong> {client.signed_bid ? "Yes" : "No"}</p>
             <p><strong>Step:</strong> {client.step}</p>
+            {client.step === 1 && (
+              <div className="mt-4">
+                <p className="text-yellow-300">Please click here to sign:</p>
+                <a
+                  href={client.docusign_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 underline"
+                >
+                  {client.docusign_link}
+                </a>
+                <p className="mt-2">Once signed, please wait for 24 hours for the next step to appear.</p>
+              </div>
+            )}
             <div className="mt-4">
               <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
                 <div
@@ -63,10 +78,4 @@ function ClientPageContent() {
   );
 }
 
-export default function ClientPage() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <ClientPageContent />
-    </Suspense>
-  );
-}
+export default ClientPageContent;
