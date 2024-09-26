@@ -17,21 +17,31 @@ export default function Home() {
 
   const handlePinSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const { data } = await supabase.from("clients").select("*").eq("pin", pin);
-    if (data && data.length > 0) {
-      router.push(`/client?pin=${pin}`);
-    } else {
-      alert("Incorrect PIN");
+    try {
+      const { data } = await supabase.from("clients").select("*").eq("pin", pin);
+      if (data && data.length > 0) {
+        router.push(`/client?pin=${pin}`);
+      } else {
+        alert("Incorrect PIN");
+      }
+    } catch (error) {
+      console.error("Error fetching client data:", error);
+      alert("An error occurred. Please try again.");
     }
   };
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      alert("Login failed");
-    } else {
-      router.push("/admin");
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        alert("Login failed");
+      } else {
+        router.push("/admin");
+      }
+    } catch (error) {
+      console.error("Error during login:", error);
+      alert("An error occurred. Please try again.");
     }
   };
 
