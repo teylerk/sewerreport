@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useSearchParams } from "next/navigation";
 
@@ -14,7 +14,7 @@ interface Client {
   step: number;
 }
 
-export default function ClientPage() {
+function ClientPageContent() {
   const [client, setClient] = useState<Client | null>(null);
   const searchParams = useSearchParams();
   const pin = searchParams.get("pin");
@@ -60,5 +60,13 @@ export default function ClientPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ClientPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ClientPageContent />
+    </Suspense>
   );
 }
