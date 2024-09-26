@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useSearchParams } from "next/navigation";
 
@@ -28,54 +28,57 @@ function ClientPageContent() {
       }
     };
 
-    fetchClient();
+    if (pin) {
+      fetchClient();
+    }
   }, [pin]);
 
+  if (!client) {
+    return <div>Loading...</div>;
+  }
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-purple-500 to-pink-500 p-4">
-      <div className="bg-gray-800 text-white p-6 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4">Client Information</h1>
-        {client ? (
-          <div>
-            <p><strong>Name:</strong> {client.name}</p>
-            <p><strong>Address:</strong> {client.address}</p>
-            <p><strong>Phone:</strong> {client.phone}</p>
-            <p><strong>Email:</strong> {client.email}</p>
-            <p><strong>Scheduled Date:</strong> {client.scheduled_date}</p>
-            <p><strong>Signed Bid:</strong> {client.signed_bid ? "Yes" : "No"}</p>
-            <p><strong>Step:</strong> {client.step}</p>
-            {client.step === 1 && (
-              <div className="mt-4">
-                <p className="text-yellow-300">Please click here to sign:</p>
-                <a
-                  href={client.docusign_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-500 underline"
-                >
-                  {client.docusign_link}
-                </a>
-                <p className="mt-2">Once signed, please wait for 24 hours for the next step to appear.</p>
-              </div>
-            )}
-            <div className="mt-4">
-              <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                <div
-                  className="bg-blue-600 h-2.5 rounded-full"
-                  style={{ width: `${(client.step / 10) * 100}%` }}
-                ></div>
-              </div>
-              <div className="flex justify-center mt-2">
-                <span>Step {client.step} of 10</span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <p>Loading...</p>
-        )}
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">Client Information</h1>
+      <p><strong>Name:</strong> {client.name}</p>
+      <p><strong>Address:</strong> {client.address}</p>
+      <p><strong>Phone:</strong> {client.phone}</p>
+      <p><strong>Email:</strong> {client.email}</p>
+      <p><strong>Scheduled Date:</strong> {client.scheduled_date}</p>
+      <p><strong>Signed Bid:</strong> {client.signed_bid ? "Yes" : "No"}</p>
+      {client.step === 1 && (
+        <div className="mt-4">
+          <p>Please sign the document using the following link:</p>
+          <a
+            href={client.docusign_link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 underline"
+          >
+            {client.docusign_link}
+          </a>
+          <p className="mt-2">Once signed, please wait for 24 hours for the next step to appear.</p>
+        </div>
+      )}
+      <div className="mt-4">
+        <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+          <div
+            className="bg-blue-600 h-2.5 rounded-full"
+            style={{ width: `${(client.step / 10) * 100}%` }}
+          ></div>
+        </div>
+        <div className="flex justify-center mt-2">
+          <span>Step {client.step} of 10</span>
+        </div>
       </div>
     </div>
   );
 }
 
-export default ClientPageContent;
+export default function ClientPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ClientPageContent />
+    </Suspense>
+  );
+}
