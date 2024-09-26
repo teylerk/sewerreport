@@ -119,6 +119,22 @@ export default function AdminDashboard() {
     }
   };
 
+  const handlePreviousStep = async (client: Client) => {
+    if (client.step > 1) { // Ensure the step does not go below 1
+      const updatedStep = client.step - 1; // Decrement the step
+      const { error } = await supabase
+        .from("clients")
+        .update({ step: updatedStep })
+        .eq("id", client.id); // Update the client's step in the database
+
+      if (error) {
+        alert("Error updating step");
+      } else {
+        fetchClients(); // Refresh the client list to reflect the updated step
+      }
+    }
+  };
+
   if (isLoading) return <div>Loading...</div>;
   if (!isAuthorized) return null;
 
@@ -151,7 +167,7 @@ export default function AdminDashboard() {
                 Edit
               </button>
               <button
-                onClick={() => handlePreviousStep(client)}
+                onClick={() => handlePreviousStep(client)} // Call the new function here
                 className="px-4 py-2 bg-gray-500 text-white rounded-lg"
                 disabled={client.step === 1}
               >
