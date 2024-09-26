@@ -14,10 +14,22 @@ const generatePin = () => {
   return Math.floor(1000 + Math.random() * 9000).toString();
 };
 
+interface Client {
+  id: string;
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  scheduled_date: string;
+  signed_bid: boolean;
+  pin: string;
+  step: number;
+}
+
 export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const [clients, setClients] = useState([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [newClient, setNewClient] = useState({
     name: "",
@@ -46,10 +58,12 @@ export default function AdminDashboard() {
 
   const fetchClients = async () => {
     const { data } = await supabase.from("clients").select("*");
-    setClients(data);
+    if (data) {
+      setClients(data);
+    }
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setNewClient((prev) => ({
       ...prev,
@@ -57,7 +71,7 @@ export default function AdminDashboard() {
     }));
   };
 
-  const handleAddClient = async (e) => {
+  const handleAddClient = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const pin = generatePin();
     const { error } = await supabase.from("clients").insert([{ ...newClient, pin }]);
@@ -69,7 +83,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleNextStep = async (client) => {
+  const handleNextStep = async (client: Client) => {
     const newStep = Math.min(client.step + 1, 10);
     const { error } = await supabase
       .from("clients")
@@ -80,7 +94,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handlePreviousStep = async (client) => {
+  const handlePreviousStep = async (client: Client) => {
     const newStep = Math.max(client.step - 1, 1);
     const { error } = await supabase
       .from("clients")
