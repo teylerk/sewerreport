@@ -34,41 +34,43 @@ function ClientPageContent() {
   }, [pin]);
 
   if (!client) {
-    return <div>Loading...</div>;
+    return <div className="text-white">Loading...</div>;
   }
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Client Information</h1>
-      <p><strong>Name:</strong> {client.name}</p>
-      <p><strong>Address:</strong> {client.address}</p>
-      <p><strong>Phone:</strong> {client.phone}</p>
-      <p><strong>Email:</strong> {client.email}</p>
-      <p><strong>Scheduled Date:</strong> {client.scheduled_date}</p>
-      <p><strong>Signed Bid:</strong> {client.signed_bid ? "Yes" : "No"}</p>
-      {client.step === 1 && (
+    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 p-8">
+      <h1 className="text-4xl font-bold text-white mb-8 text-center">Client Information</h1>
+      <div className="p-4 bg-white bg-opacity-10 rounded-xl backdrop-blur-lg shadow-xl">
+        <p className="text-white"><strong>Name:</strong> {client.name}</p>
+        <p className="text-white"><strong>Address:</strong> {client.address}</p>
+        <p className="text-white"><strong>Phone:</strong> {client.phone}</p>
+        <p className="text-white"><strong>Email:</strong> {client.email}</p>
+        <p className="text-white"><strong>Scheduled Date:</strong> {client.scheduled_date}</p>
+        <p className="text-white"><strong>Signed Bid:</strong> {client.signed_bid ? "Yes" : "No"}</p>
+        {client.step === 1 && (
+          <div className="mt-4">
+            <p className="text-white">Please sign the document using the following link:</p>
+            <a
+              href={client.docusign_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white underline"
+            >
+              {client.docusign_link}
+            </a>
+            <p className="mt-2 text-white">Once signed, please wait for 24 hours for the next step to appear.</p>
+          </div>
+        )}
         <div className="mt-4">
-          <p>Please sign the document using the following link:</p>
-          <a
-            href={client.docusign_link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 underline"
-          >
-            {client.docusign_link}
-          </a>
-          <p className="mt-2">Once signed, please wait for 24 hours for the next step to appear.</p>
-        </div>
-      )}
-      <div className="mt-4">
-        <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-          <div
-            className="bg-blue-600 h-2.5 rounded-full"
-            style={{ width: `${(client.step / 10) * 100}%` }}
-          ></div>
-        </div>
-        <div className="flex justify-center mt-2">
-          <span>Step {client.step} of 10</span>
+          <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+            <div
+              className="bg-blue-600 h-2.5 rounded-full"
+              style={{ width: `${(client.step / 10) * 100}%` }}
+            ></div>
+          </div>
+          <div className="flex justify-center mt-2">
+            <span className="text-white">Step {client.step} of 10</span>
+          </div>
         </div>
       </div>
     </div>
@@ -77,7 +79,7 @@ function ClientPageContent() {
 
 export default function ClientPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div className="text-white">Loading...</div>}>
       <ClientPageContent />
     </Suspense>
   );
