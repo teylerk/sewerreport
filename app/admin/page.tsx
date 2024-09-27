@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
+import Link from 'next/link';
 
 const allowedEmails = [
   "teylersf@gmail.com",
@@ -25,7 +26,8 @@ interface Client {
   pin: string;
   step: number;
   docusign_link: string;
-  notes: string; // Add the notes field to the Client interface
+  notes: string;
+  status: string;
 }
 
 export default function AdminDashboard() {
@@ -41,10 +43,12 @@ export default function AdminDashboard() {
     scheduled_date: "",
     signed_bid: false,
     docusign_link: "",
-    notes: "", // Initialize the notes field
+    notes: "",
+    status: "pending",
   });
   const [editClientId, setEditClientId] = useState<string | null>(null);
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<'pending' | 'completed'>('pending');
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -64,8 +68,13 @@ export default function AdminDashboard() {
   const fetchClients = async () => {
     const { data } = await supabase.from("clients").select("*");
     if (data) {
-      // Sort clients by scheduled_date in ascending order
-      const sortedClients = data.sort((a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime());
+      // Sort clients by completed status and scheduled_date
+      const sortedClients = data.sort((a, b) => {
+        if (a.status !== b.status) {
+          return a.status === 'completed' ? 1 : -1;
+        }
+        return new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime();
+      });
       setClients(sortedClients);
     }
   };
@@ -82,7 +91,7 @@ export default function AdminDashboard() {
   const handleAddClient = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const pin = generatePin();
-    const { error } = await supabase.from("clients").insert([{ ...newClient, pin }]);
+    const { error } = await supabase.from("clients").insert([{ ...newClient, pin, status: "pending" }]);
     if (error) {
       alert("Error adding client");
     } else {
@@ -140,6 +149,45 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleMarkAsCompleted = async (client: Client) => {
+    const { error } = await supabase
+      .from("clients")
+      .update({ status: 'completed' })
+      .eq("id", client.id);
+
+    if (error) {
+      alert("Error marking client as completed");
+    } else {
+      // Update the local state
+      setClients(prevClients => 
+        prevClients.map(c => 
+          c.id === client.id ? { ...c, status: 'completed' } : c
+        )
+      );
+    }
+  };
+
+  const handleMarkAsPending = async (client: Client) => {
+    const { error } = await supabase
+      .from("clients")
+      .update({ status: 'pending' })
+      .eq("id", client.id);
+
+    if (error) {
+      alert("Error marking client as pending");
+    } else {
+      // Update the local state
+      setClients(prevClients => 
+        prevClients.map(c => 
+          c.id === client.id ? { ...c, status: 'pending' } : c
+        )
+      );
+    }
+  };
+
+  const pendingClients = clients.filter(client => client.status !== 'completed');
+  const completedClients = clients.filter(client => client.status === 'completed');
+
   const getClientStepText = (client: Client) => {
     switch (client.step) {
       case 1:
@@ -177,14 +225,45 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 p-8">
       <h1 className="text-4xl font-bold text-white mb-8 text-center">Admin Dashboard</h1>
-      <button
-        onClick={() => setModalIsOpen(true)}
-        className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition duration-300 mb-8"
-      >
-        Add New Client
-      </button>
+      <div className="flex justify-between mb-8">
+        <button
+          onClick={() => setModalIsOpen(true)}
+          className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition duration-300"
+        >
+          Add New Client
+        </button>
+        <Link href="/admin/send-sms">
+          <button className="px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold rounded-lg transition duration-300">
+            Send SMS
+          </button>
+        </Link>
+      </div>
+      
+      <div className="mb-4 flex">
+        <button
+          onClick={() => setActiveTab('pending')}
+          className={`px-4 py-2 rounded-tl-lg rounded-tr-lg ${
+            activeTab === 'pending'
+              ? 'bg-white text-purple-600 font-bold'
+              : 'bg-purple-600 text-white'
+          }`}
+        >
+          Pending
+        </button>
+        <button
+          onClick={() => setActiveTab('completed')}
+          className={`px-4 py-2 rounded-tl-lg rounded-tr-lg ${
+            activeTab === 'completed'
+              ? 'bg-white text-purple-600 font-bold'
+              : 'bg-purple-600 text-white'
+          }`}
+        >
+          Completed
+        </button>
+      </div>
+
       <ul className="space-y-4">
-        {clients.map((client) => (
+        {(activeTab === 'pending' ? pendingClients : completedClients).map((client) => (
           <li key={client.id} className="p-4 bg-white bg-opacity-10 rounded-xl backdrop-blur-lg shadow-xl">
             <p className="text-white"><strong>Name:</strong> {client.name}</p>
             <p className="text-white"><strong>Address:</strong> {client.address}</p>
@@ -195,7 +274,7 @@ export default function AdminDashboard() {
             <p className="text-white"><strong>PIN:</strong> {client.pin}</p>
             <p className="text-white"><strong>Step:</strong> {client.step}</p>
             <p className="text-white"><strong>DocuSign Link:</strong> {client.docusign_link}</p>
-            <p className="text-white"><strong>Notes:</strong> {client.notes}</p> {/* Display the notes field */}
+            <p className="text-white"><strong>Notes:</strong> {client.notes}</p>
             <div className="mt-4 border border-white p-4 rounded-lg">
               {getClientStepText(client)}
             </div>
@@ -206,20 +285,37 @@ export default function AdminDashboard() {
               >
                 Edit
               </button>
-              <button
-                onClick={() => handlePreviousStep(client)}
-                className="px-4 py-2 bg-gray-500 text-white rounded-lg"
-                disabled={client.step === 1}
-              >
-                Previous Step
-              </button>
-              <button
-                onClick={() => handleNextStep(client)}
-                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition duration-300"
-                disabled={client.step === 10}
-              >
-                Next Step
-              </button>
+              {client.status !== 'completed' ? (
+                <>
+                  <button
+                    onClick={() => handlePreviousStep(client)}
+                    className="px-4 py-2 bg-gray-500 text-white rounded-lg"
+                    disabled={client.step === 1}
+                  >
+                    Previous Step
+                  </button>
+                  <button
+                    onClick={() => handleNextStep(client)}
+                    className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition duration-300"
+                    disabled={client.step === 10}
+                  >
+                    Next Step
+                  </button>
+                  <button
+                    onClick={() => handleMarkAsCompleted(client)}
+                    className="px-4 py-2 bg-green-500 text-white rounded-lg"
+                  >
+                    Mark as Completed
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => handleMarkAsPending(client)}
+                  className="px-4 py-2 bg-yellow-500 text-white rounded-lg"
+                >
+                  Mark as Pending
+                </button>
+              )}
             </div>
           </li>
         ))}
