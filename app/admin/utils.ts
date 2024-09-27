@@ -1,3 +1,5 @@
+import { Client } from './types';
+
 export const allowedEmails = [
   "teylersf@gmail.com",
   "kalintrenchless@gmail.com",
