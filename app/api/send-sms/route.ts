@@ -5,9 +5,19 @@ const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
 
-const client = twilio(accountSid, authToken);
+// Check if the required environment variables are set
+if (!accountSid || !authToken || !twilioPhoneNumber) {
+  console.error('Missing Twilio credentials. Please check your environment variables.');
+}
+
+// Initialize the Twilio client only if the credentials are available
+const client = accountSid && authToken ? twilio(accountSid, authToken) : null;
 
 export async function POST(request: Request) {
+  if (!client) {
+    return NextResponse.json({ success: false, error: 'Twilio client not initialized' }, { status: 500 });
+  }
+
   const { to, message } = await request.json();
 
   try {
